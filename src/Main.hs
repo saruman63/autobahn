@@ -110,17 +110,22 @@ main = do
             location <- fmap (</> ".autobahn/tracking.yaml") Directory.getHomeDirectory
             YAML.encodeFile location $ Episodes tracking
 
-        checkShow api currentEpisode = do
-            res <- RPC.call $ GetTorrents api ( queryName currentEpisode) ( queryResolution currentEpisode) ( queryOrigin currentEpisode)
+        checkShow api currentEpisode@EpisodeQuery{..} = do
+            res <- RPC.call $ GetTorrents api queryName -- queryResolution queryOrigin querySource
             case res of
                 Left err -> do
                     liftIO $ exitWithError err
                 Right (Torrents torrents') -> do
-                    -- Only take new episodes.
-                    let currentSeason = querySeason currentEpisode
-                    let currentEp = queryEpisode currentEpisode
+                    let currentSeason = querySeason
+                    let currentEp = queryEpisode
                     let torrents = List.filter (\Torrent{..} ->
+                            -- Only take new episodes.
                             (torrentSeason, torrentEpisode) >= (currentSeason, currentEp)
+                            -- Filter other parameters.
+                            && "Episode" == torrentCategory
+                            && queryResolution == torrentResolution
+                            && queryOrigin == torrentOrigin
+                            && maybeEqual querySource torrentSource
                           ) torrents'
 
                     -- Update latest episodes.
@@ -130,6 +135,9 @@ main = do
                     let latestEpisode = currentEpisode {querySeason = latestSeason, queryEpisode = latestEp}
 
                     return ( latestEpisode, torrents)
+ 
+        maybeEqual Nothing _ = True
+        maybeEqual (Just v) u = u == v
 
 {-
         getTorrentLinks api torrent = do

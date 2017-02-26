@@ -39,6 +39,7 @@ call fn = do
             return $ Left $ show e
         Right res -> 
             -- do
+            -- liftIO $ putStrLn $ show $ Aeson.encode fn
             -- liftIO $ putStrLn $ show $ HTTP.responseBody res
             return $ fmap rpcResult $ Aeson.eitherDecode $ HTTP.responseBody res 
 

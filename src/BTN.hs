@@ -5,6 +5,7 @@ import qualified Data.Aeson as Aeson
 import qualified Data.Attoparsec.Text as Atto
 import qualified Data.HashMap.Lazy as Map
 import qualified Data.Text as Text
+import Text.Read (readMaybe)
 
 import Common
 import qualified JSONRPC as RPC
@@ -98,10 +99,10 @@ instance ToJSON Episodes where
     toJSON (Episodes e) = Aeson.object ["btn" .= e]
 
 data Torrent = Torrent {
-      torrentId :: Text -- Integer
+      torrentId :: Int
     , torrentSeason :: Int
     , torrentEpisode :: Int
-    , torrentLink :: String
+    , torrentLink :: Text
     , torrentReleaseName :: Text
     , torrentCategory :: Text
     , torrentResolution :: Text
@@ -110,6 +111,7 @@ data Torrent = Torrent {
     , torrentSeeders :: Int
     , torrentSnatched :: Int
     , torrentLeechers :: Int
+    , torrentSize :: Int
     }
     deriving (Show)
     
@@ -121,7 +123,8 @@ data Torrents = Torrents {
 instance FromJSON Torrents where
     parseJSON = Aeson.withObject "Torrents" $ \o -> do
         torrents <- Map.toList <$> o .: "torrents"
-        ts <- foldM (\acc (k, v) -> Aeson.withObject "Torrent" ( \v -> do
+        ts <- foldM (\acc (k', v) -> Aeson.withObject "Torrent" ( \v -> do
+                  k <- toInt k'
                   ep' <- v .: "GroupName"
                   link <- v .: "DownloadURL"
                   name <- v .: "ReleaseName"
@@ -129,9 +132,10 @@ instance FromJSON Torrents where
                   resolution <- v .: "Resolution"
                   origin <- v .: "Origin"
                   source <- v .: "Source"
-                  seeders <- v .: "Seeders"
-                  snatched <- v .: "Snatched"
-                  leechers <- v .: "Leechers"
+                  seeders <- v .: "Seeders" >>= toInt
+                  snatched <- v .: "Snatched" >>= toInt
+                  leechers <- v .: "Leechers" >>= toInt
+                  size <- v .: "Size" >>= toInt
 
                   -- Skips episodes where the groupname can't be parsed.
                   case parseGroupName ep' of
@@ -139,7 +143,7 @@ instance FromJSON Torrents where
                           -- fail $ "Could not parse GroupName (" <> Text.unpack ep' <> "): " <> err
                           return acc
                       Right ( season, episode) -> 
-                          return $ (Torrent k season episode link name category resolution origin source seeders snatched leechers):acc
+                          return $ (Torrent k season episode link name category resolution origin source seeders snatched leechers size):acc
                 ) v
               ) [] torrents
         return $ Torrents ts
@@ -154,4 +158,5 @@ instance FromJSON Torrents where
                 e <- Atto.decimal
                 Atto.endOfInput
                 return ( s, e)
+            toInt i = maybe (fail $ "Invalid int " <> i) pure $ readMaybe i
 

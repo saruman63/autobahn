@@ -71,7 +71,7 @@ main = do
                         fmap (</> Text.unpack name) Directory.getTemporaryDirectory
 
                 -- Download torrent file.
-                req <- HTTP.parseRequest link
+                req <- HTTP.parseRequest $ Text.unpack link
 
                 res <- try $ runResourceT $ HTTP.httpSink req $ \_ -> Conduit.sinkFile target
                 -- putStrLn target

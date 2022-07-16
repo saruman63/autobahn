@@ -127,6 +127,7 @@ main = do
                             && queryResolution == torrentResolution
                             && maybeEqual queryOrigin torrentOrigin
                             && maybeEqual querySource torrentSource
+                            && torrentSeeders >= 1
                             -- Filter dolby vision torrents.
                             && not (Text.isInfixOf ".DV." torrentReleaseName)
                           ) torrents'''
@@ -149,8 +150,9 @@ main = do
         maybeEqual Nothing _ = True
         maybeEqual (Just v) u = u == v
 
-        -- TODO: Can we get file size?
-        scoreTorrent Torrent{..} = fromIntegral torrentSeeders + fromIntegral torrentSnatched / 2.0 + fromIntegral torrentLeechers / 4.0
+        -- Smaller is better.
+        scoreTorrent Torrent{..} = fromIntegral torrentSize
+        -- scoreTorrent Torrent{..} = -1.0 * (fromIntegral torrentSeeders + fromIntegral torrentSnatched / 2.0 + fromIntegral torrentLeechers / 4.0)
 
 {-
         getTorrentLinks api torrent = do

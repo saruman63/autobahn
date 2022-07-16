@@ -10,6 +10,7 @@ import qualified Data.Aeson as Aeson
 import qualified Data.Conduit.Binary as Conduit
 import qualified Data.Conduit.Network as Network
 import qualified Data.List as List
+import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Yaml as YAML
 import qualified Network.HTTP.Conduit as HTTP
@@ -62,12 +63,12 @@ main = do
             let link = torrentLink torrent
             let name = torrentReleaseName torrent
 
-            putStrLn name
+            putStrLn $ Text.unpack name
 
             when (not testMode) $ do
                 -- Get temporary file.
                 target <- fmap (flip FilePath.addExtension "torrent") $
-                        fmap (</> name) Directory.getTemporaryDirectory
+                        fmap (</> Text.unpack name) Directory.getTemporaryDirectory
 
                 -- Download torrent file.
                 req <- HTTP.parseRequest link
@@ -126,6 +127,8 @@ main = do
                             && queryResolution == torrentResolution
                             && queryOrigin == torrentOrigin
                             && maybeEqual querySource torrentSource
+                            -- Filter dolby vision torrents.
+                            && not (Text.isInfixOf ".DV." torrentReleaseName)
                           ) torrents'
 
                     -- Update latest episodes.

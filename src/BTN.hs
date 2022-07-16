@@ -101,7 +101,7 @@ data Torrent = Torrent {
     , torrentSeason :: Int
     , torrentEpisode :: Int
     , torrentLink :: String
-    , torrentReleaseName :: String
+    , torrentReleaseName :: Text
     , torrentCategory :: Text
     , torrentResolution :: Text
     , torrentOrigin :: Text

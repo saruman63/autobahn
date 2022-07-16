@@ -116,10 +116,10 @@ main = do
             case res of
                 Left err -> do
                     liftIO $ exitWithError err
-                Right (Torrents torrents') -> do
+                Right (Torrents torrents''') -> do
                     let currentSeason = querySeason
                     let currentEp = queryEpisode
-                    let torrents = List.filter (\Torrent{..} ->
+                    let torrents'' = List.filter (\Torrent{..} ->
                             -- Only take new episodes.
                             (torrentSeason, torrentEpisode) >= (currentSeason, currentEp)
                             -- Filter other parameters.
@@ -129,7 +129,14 @@ main = do
                             && maybeEqual querySource torrentSource
                             -- Filter dolby vision torrents.
                             && not (Text.isInfixOf ".DV." torrentReleaseName)
-                          ) torrents'
+                          ) torrents'''
+                    -- Group by episode.
+                    let torrents' = List.groupBy (\t1 t2 ->
+                               torrentSeason  t1 == torrentSeason  t2
+                            && torrentEpisode t1 == torrentEpisode t2
+                          ) torrents''
+                    -- Choose "best" option for each episode.
+                    let torrents = map (head . List.sortOn scoreTorrent) torrents'
 
                     -- Update latest episodes.
                     let (latestSeason, latestEp) = List.foldr (\Torrent{..} acc ->
@@ -141,6 +148,9 @@ main = do
  
         maybeEqual Nothing _ = True
         maybeEqual (Just v) u = u == v
+
+        -- TODO: Can we get file size?
+        scoreTorrent Torrent{..} = fromIntegral torrentSeeders + fromIntegral torrentSnatched / 2.0 + fromIntegral torrentLeechers / 4.0
 
 {-
         getTorrentLinks api torrent = do

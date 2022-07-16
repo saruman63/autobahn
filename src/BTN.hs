@@ -107,6 +107,9 @@ data Torrent = Torrent {
     , torrentResolution :: Text
     , torrentOrigin :: Text
     , torrentSource :: Text
+    , torrentSeeders :: Int
+    , torrentSnatched :: Int
+    , torrentLeechers :: Int
     }
     deriving (Show)
     
@@ -126,6 +129,9 @@ instance FromJSON Torrents where
                   resolution <- v .: "Resolution"
                   origin <- v .: "Origin"
                   source <- v .: "Source"
+                  seeders <- v .: "Seeders"
+                  snatched <- v .: "Snatched"
+                  leechers <- v .: "Leechers"
 
                   -- Skips episodes where the groupname can't be parsed.
                   case parseGroupName ep' of
@@ -133,7 +139,7 @@ instance FromJSON Torrents where
                           -- fail $ "Could not parse GroupName (" <> Text.unpack ep' <> "): " <> err
                           return acc
                       Right ( season, episode) -> 
-                          return $ (Torrent k season episode link name category resolution origin source):acc
+                          return $ (Torrent k season episode link name category resolution origin source seeders snatched leechers):acc
                 ) v
               ) [] torrents
         return $ Torrents ts

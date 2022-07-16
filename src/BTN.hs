@@ -54,7 +54,7 @@ data EpisodeQuery = EpisodeQuery {
   , querySeason :: Int
   , queryEpisode :: Int
   , queryResolution :: Text
-  , queryOrigin :: Text
+  , queryOrigin :: Maybe Text
   , querySource :: Maybe Text
   }
   -- TODO: Add origin and resolution (at least) XXX
@@ -66,7 +66,7 @@ instance FromJSON EpisodeQuery where
         <*> o .: "season"
         <*> o .: "episode"
         <*> o .: "resolution"
-        <*> o .: "origin"
+        <*> o .:? "origin"
         <*> o .:? "source"
     parseJSON _ = fail "Episode is not an object"
     
@@ -77,12 +77,13 @@ instance ToJSON EpisodeQuery where
               , "season" .= season
               , "episode" .= episode
               , "resolution" .= resolution
-              , "origin" .= origin
               ]
         in
-        Aeson.object $ case source of
-            Nothing -> os
-            Just source -> ("source" .= source):os
+        Aeson.object $ optionalField "origin" origin
+                     $ optionalField "source" source os
+
+      where optionalField k Nothing xs  = xs
+            optionalField k (Just v) xs = (k .= v):xs
 
 newtype Episodes = Episodes {
     episodes :: [EpisodeQuery]

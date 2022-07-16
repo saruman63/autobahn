@@ -125,7 +125,7 @@ main = do
                             -- Filter other parameters.
                             && "Episode" == torrentCategory
                             && queryResolution == torrentResolution
-                            && queryOrigin == torrentOrigin
+                            && maybeEqual queryOrigin torrentOrigin
                             && maybeEqual querySource torrentSource
                             -- Filter dolby vision torrents.
                             && not (Text.isInfixOf ".DV." torrentReleaseName)

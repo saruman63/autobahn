@@ -135,6 +135,8 @@ main = do
                     let torrents' = List.groupBy (\t1 t2 ->
                                torrentSeason  t1 == torrentSeason  t2
                             && torrentEpisode t1 == torrentEpisode t2
+                          ) $ List.sortOn (\t ->
+                               (torrentSeason t, torrentEpisode t)
                           ) torrents''
                     -- Choose "best" option for each episode.
                     let torrents = map (head . List.sortOn scoreTorrent) torrents'

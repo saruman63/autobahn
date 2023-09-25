@@ -8,6 +8,8 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import Data.Aeson (FromJSON(..), ToJSON(..), (.:), (.=))
 import qualified Data.Aeson as Aeson
+import Data.Bifunctor (Bifunctor (..))
+import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Network.HTTP.Conduit as HTTP
 import qualified Network.HTTP.Types.Header as HTTP
@@ -41,7 +43,7 @@ call fn = do
             -- do
             -- liftIO $ putStrLn $ show $ Aeson.encode fn
             -- liftIO $ putStrLn $ show $ HTTP.responseBody res
-            return $ fmap rpcResult $ Aeson.eitherDecode $ HTTP.responseBody res 
+            return $ bimap (\e -> "Could not parse result:\n" <> show (HTTP.responseBody res) <> "\nFor request:\n" <> show (Aeson.encode fn) <> "\n" <> e) rpcResult $ Aeson.eitherDecode $ HTTP.responseBody res
 
     where
         makeRequest request' fn = request' {
